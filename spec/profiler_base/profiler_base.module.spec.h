@@ -5,6 +5,12 @@
 #define EMERALDS_ENABLE_PROFILER
 #include "../../src/profiler_base/profiler_base.h"
 
+#include <unistd.h>
+
+#ifndef usleep
+extern int usleep(__useconds_t __useconds);
+#endif
+
 module(T_profiler_base, {
   it("tests random profiles", {
     int i;
