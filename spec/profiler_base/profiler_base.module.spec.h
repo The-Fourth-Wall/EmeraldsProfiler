@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 #ifndef usleep
-extern int usleep(__useconds_t __useconds);
+extern int usleep(unsigned int __useconds);
 #endif
 
 module(T_profiler_base, {
