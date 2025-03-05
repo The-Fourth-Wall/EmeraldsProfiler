@@ -14,24 +14,18 @@
   "compile-flags": {
     "cc": "clang",
     "debug": {
-      "opt": "-Og -g",
+      "opt": "-Og",
       "version": "-std=c89",
-      "flags": "-Wall -Wextra -Werror -pedantic -pedantic-errors -Wpedantic",
-      "warnings": ""
+      "flags": "-g -fsanitize=address",
+      "warnings": "-Wall -Wextra -Werror -pedantic -pedantic-errors -Wpedantic"
     },
     "release": {
       "opt": "-O2",
-      "version": "-std=c2x",
-      "flags": "",
-      "warnings": ""
-    },
-    "test": {
-      "opt": "-Og -g",
       "version": "-std=c89",
       "flags": "",
       "warnings": ""
     }
   },
 
-  "license": "gpl-v3"
+  "license": "mit"
 }
