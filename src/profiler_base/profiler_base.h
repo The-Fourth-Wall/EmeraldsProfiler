@@ -50,14 +50,65 @@ typedef struct EmeraldsProfiler {
 /** @brief A global object used internally for profile data */
 static EmeraldsProfiler emeralds_profiler;
 
+  #if defined(_WIN32)
+    #include <Windows.h>
+  #elif defined(__unix__) || defined(__linux__)
+    #if defined(__clang__)
+      #define CSPEC_CLOCKID 0
+    #endif
+
+    #include <sys/time.h>
+
+    #if !defined(CSPEC_CLOCKID)
+      #if defined(CLOCK_MONOTONIC)
+        #define CSPEC_CLOCKID CLOCK_MONOTONIC
+      #else
+        #define CSPEC_CLOCKID 1
+      #endif
+    #endif
+  #elif defined(__MACH__) && defined(__APPLE__)
+    #include <mach/mach.h>
+    #include <mach/mach_time.h>
+    #include <time.h>
+  #else
+    #include <time.h>
+  #endif
+
 /**
- * @brief Internal function to get the current time
- * @return double - The current time in seconds
+ * @desc: A cross platform timer function for profiling
+ * @return The time in nanoseconds
  */
-static double _profiler_get_time(void) {
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ts.tv_sec + ts.tv_nsec * 1e-9;
+static size_t _profiler_get_time(void) {
+  static size_t is_init = 0;
+
+  #if defined(_WIN32)
+  static LARGE_INTEGER win_frequency;
+  if(0 == is_init) {
+    QueryPerformanceFrequency(&win_frequency);
+    is_init = 1;
+  }
+  LARGE_INTEGER now;
+  QueryPerformanceCounter(&now);
+  return (1e9 * now.QuadPart) / win_frequency.QuadPart;
+  #elif defined(__APPLE__)
+  static mach_timebase_info_data_t info;
+  size_t now;
+  if(0 == is_init) {
+    mach_timebase_info(&info);
+    is_init = 1;
+  }
+  now = mach_absolute_time();
+  now *= info.numer;
+  now /= info.denom;
+  return now;
+  #elif defined(__linux)
+  struct timeval tv;
+  if(0 == is_init) {
+    is_init = 1;
+  }
+  gettimeofday(&tv, NULL);
+  return (size_t)(tv.tv_sec * 1000000000LL + tv.tv_usec * 1000LL);
+  #endif
 }
 
 /**
@@ -98,6 +149,7 @@ void profiler_stop_profiling(const char *function_name) {
        0) {
       emeralds_profiler.profile_data[i].total_time +=
         end_time - emeralds_profiler.profile_data[i].start_time;
+        emeralds_profiler.profile_data[i].total_time /= 100000000;
       return;
     }
   }
